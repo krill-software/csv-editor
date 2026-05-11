@@ -22,6 +22,7 @@ Convention lives in [STYLE.md](https://github.com/krill-software/.github/blob/ma
 
 ## Goals
 
+- **Boot into a blank scratch sheet, not an empty placeholder.** Editors should open to a writable surface (Excel "Book1", Sheets "Untitled spreadsheet"). The default is a 50 × 10 grid of empty cells with no file path — the user can start typing immediately and `Save As` to give it a real home.
 - Open a CSV and start editing in under ~200 ms for files under 5 MB.
 - **Excel-shaped grid**: sticky header row + sticky row-number column. Click a cell to edit, arrow keys to navigate, Tab/Enter to commit.
 - Handle large files without freezing — virtualized row rendering, only the visible window is in the DOM.
@@ -198,8 +199,8 @@ The v1 SPEC stays clean; v2 will get its own SPEC supplement when we get there.
 
 ## Milestones
 
-1. **M1 — Skeleton + display.** Tauri app launches, opens a CSV via CLI arg / drag-drop / `Ctrl+O`, parses via the `csv` crate, renders the grid (sticky header + row numbers, virtualized rows). Cells are read-only at this milestone — display only.
-2. **M2 — Navigation.** Arrow keys, `Tab` / `Shift+Tab`, `Enter`, `Home` / `End`, `Ctrl+Home` / `Ctrl+End`, `PgUp` / `PgDn`. Cell-address status indicator (`A12`, `BC4567`).
-3. **M3 — Editing.** Inline cell editor (textarea overlay), commit / cancel keys, dirty tracking, in-memory edits.
-4. **M4 — Save + recents.** `Ctrl+S`, `Ctrl+Shift+S`, `Ctrl+R`, confirm-on-close-if-dirty. Round-trip a non-trivial file (quotes, embedded commas, embedded newlines) and verify byte-equivalence where possible.
-5. **M5 — Undo + polish + packaging.** In-memory undo stack (`Ctrl+Z` / `Ctrl+Shift+Z`), empty state, error state, AppImage + `.deb` build, GitHub release workflow, landing page.
+1. **M1 — Skeleton + scratch sheet + basic editing.** Tauri app launches, boots into a 50 × 10 blank scratch sheet (no file path, not dirty). Opening a CSV via CLI arg / drag-drop / `Ctrl+O` parses via the `csv` crate and replaces the grid. Click any cell to edit, `Enter` commits + moves down, `Tab` commits + moves right, `Esc` cancels. `Ctrl+S` / `Ctrl+Shift+S` write the grid back as CSV. Dirty marker rides the titlebar.
+2. **M2 — Keyboard navigation.** Arrow keys, `Home` / `End`, `Ctrl+Home` / `Ctrl+End`, `PgUp` / `PgDn`. Single-cell selection ring (separate from the edit ring). Cell-address indicator stays live in the status line while navigating.
+3. **M3 — Bigger files + add/remove rows + columns.** Streaming parse for files over ~50 MB; right-click row/column headers to insert / delete. Confirm-on-close-if-dirty.
+4. **M4 — Undo / redo.** In-memory undo stack (`Ctrl+Z` / `Ctrl+Shift+Z`), per-edit granularity. `Ctrl+R` recent files menu.
+5. **M5 — Polish + packaging.** Error states for malformed files, AppImage + `.deb` build, GitHub release workflow, landing page.

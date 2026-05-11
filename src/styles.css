@@ -94,5 +94,29 @@
   box-shadow: 1px 0 0 var(--fm-rule);
 }
 
-/* Hide the grid + show empty/error placeholders based on body state. */
+/* Mousedown-to-edit + accent selection ring on the cell being edited. */
+.cell.data {
+  cursor: text;
+}
+.cell.data.editing {
+  padding: 0;
+  box-shadow: 0 0 0 2px var(--fm-accent) inset;
+  z-index: 2;
+}
+
+.cell-input {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: none;
+  margin: 0;
+  padding: 0 8px;
+  background: var(--fm-bg);
+  color: var(--fm-text);
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 24px;
+}
+
+/* Hide the grid + show error placeholder based on body state. */
 body:not([data-state="loaded"]) #grid { display: none; }
