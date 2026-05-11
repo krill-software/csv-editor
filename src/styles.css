@@ -1,0 +1,98 @@
+/* csv-editor — app-specific styles. Body grid, palette, chrome,
+ * status-line halves, and dirty marker all come from
+ * @krill-software/desktop-ui via the imported styles bundle. */
+
+/* Viewport (main pane) ============================================== */
+
+#viewport {
+  position: relative;
+  background: var(--fm-bg);
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--fm-rule-strong) transparent;
+}
+#viewport::-webkit-scrollbar { width: 10px; height: 10px; }
+#viewport::-webkit-scrollbar-track { background: transparent; }
+#viewport::-webkit-scrollbar-thumb {
+  background: var(--fm-rule-strong);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+#viewport::-webkit-scrollbar-thumb:hover { background: var(--fm-muted); background-clip: content-box; }
+
+/* Grid =============================================================== */
+
+#grid {
+  position: relative;
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 12px;
+  line-height: 24px;
+}
+
+/* Sticky header row carries column letters (A, B, C, …). */
+.grid-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: grid;
+  height: 24px;
+  background: var(--fm-bg);
+  border-bottom: 1px solid var(--fm-rule);
+}
+
+/* Spacer-sized content area; rows are absolutely positioned by index. */
+.grid-content {
+  position: relative;
+}
+
+.grid-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: grid;
+  height: 24px;
+}
+
+.cell {
+  height: 24px;
+  padding: 0 8px;
+  border-right: 1px solid var(--fm-rule);
+  border-bottom: 1px solid var(--fm-rule);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: var(--fm-bg);
+  color: var(--fm-text);
+}
+
+.cell.col-header,
+.cell.row-header,
+.cell.corner {
+  background: var(--fm-bg);
+  color: var(--fm-muted);
+  font-weight: 600;
+  text-align: center;
+  padding: 0;
+}
+
+/* Row-number gutter — sticky to the left edge so it stays visible when
+ * scrolling horizontally. */
+.cell.row-header {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  /* slightly heavier divider so the gutter reads as a separator, not a column */
+  box-shadow: 1px 0 0 var(--fm-rule);
+}
+
+/* Top-left corner — sits above both sticky axes. */
+.cell.corner {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  box-shadow: 1px 0 0 var(--fm-rule);
+}
+
+/* Hide the grid + show empty/error placeholders based on body state. */
+body:not([data-state="loaded"]) #grid { display: none; }
