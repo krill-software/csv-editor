@@ -413,6 +413,7 @@ function initChrome() {
       "fullscreen": toggleFullscreen,
     },
     showStatusLine: true,
+    updater: true,
   });
   titleEl = chrome.title;
   viewportEl = chrome.viewport;

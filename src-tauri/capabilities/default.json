@@ -24,6 +24,8 @@
     "cli:default",
     "dialog:default",
     "dialog:allow-open",
-    "fs:default"
+    "fs:default",
+    "updater:default",
+    "process:default"
   ]
 }

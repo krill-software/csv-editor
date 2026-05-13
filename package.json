@@ -1,7 +1,7 @@
 {
   "name": "krill-csv-editor",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -13,11 +13,13 @@
     "release:repackage": "bash scripts/publish.sh --skip-build"
   },
   "dependencies": {
-    "@krill-software/desktop-ui": "github:krill-software/desktop-ui#v0.4.3",
+    "@krill-software/desktop-ui": "github:krill-software/desktop-ui#v0.5.0",
     "@tauri-apps/api": "^2.1.1",
     "@tauri-apps/plugin-cli": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.0.1",
-    "@tauri-apps/plugin-fs": "^2.0.0"
+    "@tauri-apps/plugin-fs": "^2.0.0",
+    "@tauri-apps/plugin-process": "^2.0.0",
+    "@tauri-apps/plugin-updater": "^2.0.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.1.0",

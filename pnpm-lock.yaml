@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@krill-software/desktop-ui':
-        specifier: github:krill-software/desktop-ui#v0.4.3
-        version: https://codeload.github.com/krill-software/desktop-ui/tar.gz/4d3037967a05a354572fecab6d681b88e729c8c2(@tauri-apps/api@2.11.0)
+        specifier: github:krill-software/desktop-ui#v0.5.0
+        version: https://codeload.github.com/krill-software/desktop-ui/tar.gz/ca43386449cf484e70bb45a83e2f95e36d199f72(@tauri-apps/api@2.11.0)(@tauri-apps/plugin-dialog@2.7.1)(@tauri-apps/plugin-process@2.3.1)(@tauri-apps/plugin-updater@2.10.1)
       '@tauri-apps/api':
         specifier: ^2.1.1
         version: 2.11.0
@@ -23,6 +23,12 @@ importers:
       '@tauri-apps/plugin-fs':
         specifier: ^2.0.0
         version: 2.5.1
+      '@tauri-apps/plugin-process':
+        specifier: ^2.0.0
+        version: 2.3.1
+      '@tauri-apps/plugin-updater':
+        specifier: ^2.0.0
+        version: 2.10.1
     devDependencies:
       '@tauri-apps/cli':
         specifier: ^2.1.0
@@ -174,11 +180,19 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@krill-software/desktop-ui@https://codeload.github.com/krill-software/desktop-ui/tar.gz/4d3037967a05a354572fecab6d681b88e729c8c2':
-    resolution: {tarball: https://codeload.github.com/krill-software/desktop-ui/tar.gz/4d3037967a05a354572fecab6d681b88e729c8c2}
-    version: 0.4.3
+  '@krill-software/desktop-ui@https://codeload.github.com/krill-software/desktop-ui/tar.gz/ca43386449cf484e70bb45a83e2f95e36d199f72':
+    resolution: {tarball: https://codeload.github.com/krill-software/desktop-ui/tar.gz/ca43386449cf484e70bb45a83e2f95e36d199f72}
+    version: 0.5.0
     peerDependencies:
       '@tauri-apps/api': ^2.0.0
+      '@tauri-apps/plugin-dialog': ^2.0.0
+      '@tauri-apps/plugin-process': ^2.0.0
+      '@tauri-apps/plugin-updater': ^2.0.0
+    peerDependenciesMeta:
+      '@tauri-apps/plugin-process':
+        optional: true
+      '@tauri-apps/plugin-updater':
+        optional: true
 
   '@rollup/rollup-android-arm-eabi@4.60.3':
     resolution: {integrity: sha512-x35CNW/ANXG3hE/EZpRU8MXX1JDN86hBb2wMGAtltkz7pc6cxgjpy1OMMfDosOQ+2hWqIkag/fGok1Yady9nGw==}
@@ -406,6 +420,12 @@ packages:
   '@tauri-apps/plugin-fs@2.5.1':
     resolution: {integrity: sha512-9Lz+Jopp6QyeEWhlpkMx4R/+P9HgR+AVAI4vOZhlT8Xaymtz8iVI/Ov984/XTqgJz/5gz5NretqPB/XEMS3NhQ==}
 
+  '@tauri-apps/plugin-process@2.3.1':
+    resolution: {integrity: sha512-nCa4fGVaDL/B9ai03VyPOjfAHRHSBz5v6F/ObsB73r/dA3MHHhZtldaDMIc0V/pnUw9ehzr2iEG+XkSEyC0JJA==}
+
+  '@tauri-apps/plugin-updater@2.10.1':
+    resolution: {integrity: sha512-NFYMg+tWOZPJdzE/PpFj2qfqwAWwNS3kXrb1tm1gnBJ9mYzZ4WDRrwy8udzWoAnfGCHLuePNLY1WVCNHnh3eRA==}
+
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
@@ -547,9 +567,13 @@ snapshots:
   '@esbuild/win32-x64@0.21.5':
     optional: true
 
-  '@krill-software/desktop-ui@https://codeload.github.com/krill-software/desktop-ui/tar.gz/4d3037967a05a354572fecab6d681b88e729c8c2(@tauri-apps/api@2.11.0)':
+  '@krill-software/desktop-ui@https://codeload.github.com/krill-software/desktop-ui/tar.gz/ca43386449cf484e70bb45a83e2f95e36d199f72(@tauri-apps/api@2.11.0)(@tauri-apps/plugin-dialog@2.7.1)(@tauri-apps/plugin-process@2.3.1)(@tauri-apps/plugin-updater@2.10.1)':
     dependencies:
       '@tauri-apps/api': 2.11.0
+      '@tauri-apps/plugin-dialog': 2.7.1
+    optionalDependencies:
+      '@tauri-apps/plugin-process': 2.3.1
+      '@tauri-apps/plugin-updater': 2.10.1
 
   '@rollup/rollup-android-arm-eabi@4.60.3':
     optional: true
@@ -684,6 +708,14 @@ snapshots:
       '@tauri-apps/api': 2.11.0
 
   '@tauri-apps/plugin-fs@2.5.1':
+    dependencies:
+      '@tauri-apps/api': 2.11.0
+
+  '@tauri-apps/plugin-process@2.3.1':
+    dependencies:
+      '@tauri-apps/api': 2.11.0
+
+  '@tauri-apps/plugin-updater@2.10.1':
     dependencies:
       '@tauri-apps/api': 2.11.0
 
