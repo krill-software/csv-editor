@@ -11,5 +11,6 @@ jobs:
     with:
       product-name: "CSV Editor"
       example-file: "paper.pdf"
+    secrets: inherit
     permissions:
       contents: write
