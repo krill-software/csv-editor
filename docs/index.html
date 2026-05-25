@@ -1,60 +1,298 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CSV Editor — krill-software</title>
+    <title>CSV Editor — krill</title>
+    <meta name="description" content="A minimal CSV editor for Linux. Excel-shaped grid, virtualized rows, RFC-4180 parsing. No formulas, no menu sprawl." />
+    <meta property="og:title" content="CSV Editor — krill" />
+    <meta property="og:description" content="Open a CSV. Edit cells. Save. Nothing else." />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="https://krill-software.github.io/chrome.css" />
     <style>
-      :root {
-        --fm-bg: #FAFAFF;
-        --fm-text: #30343F;
-        --fm-muted: #878472;
-        --fm-accent: #DD7596;
-        --fm-rule: rgba(48, 52, 63, 0.08);
+      /* App-specific styles only — shared chrome lives in
+       * https://krill-software.github.io/chrome.css. */
+
+      .preview-frame {
+        margin: 48px 0 0;
+        border: 1px solid var(--rule-strong);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--bg);
+        box-shadow:
+          0 30px 60px -30px rgba(48, 52, 63, 0.18),
+          0 8px 20px -10px rgba(48, 52, 63, 0.08);
       }
-      * { box-sizing: border-box; }
-      html, body {
-        margin: 0;
-        height: 100%;
-        background: var(--fm-bg);
-        color: var(--fm-text);
-        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-        font-size: 16px;
+
+      .titlebar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--rule);
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
       }
-      body {
+      .titlebar .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--rule-strong); }
+      .titlebar .dot.red { background: #e8a5a5; }
+      .titlebar .dot.amber { background: #e8cfa5; }
+      .titlebar .dot.green { background: #a5d4b2; }
+      .titlebar .title { margin-left: 12px; color: var(--ink); }
+      .titlebar .dirty { color: var(--accent); margin-left: 4px; }
+
+      .grid {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--ink);
         display: grid;
-        place-items: center;
+        grid-template-columns: 44px repeat(6, 1fr);
+        background: var(--bg);
+      }
+      .grid > div {
+        padding: 8px 10px;
+        border-right: 1px solid var(--rule);
+        border-bottom: 1px solid var(--rule);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .grid .col-hdr,
+      .grid .row-hdr {
+        background: rgba(48, 52, 63, 0.04);
+        color: var(--muted);
+        font-size: 12px;
         text-align: center;
-        padding: 32px;
       }
-      main { max-width: 560px; }
-      h1 { font-size: 28px; font-weight: 600; margin: 0 0 8px; }
-      .tagline { color: var(--fm-muted); margin: 0 0 32px; }
-      .tagline a { border: 0; padding: 0; text-decoration: underline; text-underline-offset: 2px; color: inherit; }
-      .links { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-      .links a {
-        display: inline-block;
-        padding: 10px 18px;
-        border: 1px solid var(--fm-rule);
-        border-radius: 8px;
-        text-decoration: none;
-        color: var(--fm-text);
-        font-size: 14px;
+      .grid .cell.selected {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+        background: rgba(221, 117, 150, 0.06);
       }
-      .links a:hover { border-color: var(--fm-accent); color: var(--fm-accent); }
-      footer { margin-top: 40px; color: var(--fm-muted); font-size: 12px; }
+
+      .status-line {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 16px;
+        border-top: 1px solid var(--rule);
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      @media (max-width: 720px) {
+        .grid { grid-template-columns: 40px repeat(3, 1fr); }
+        .grid > div.col-4,
+        .grid > div.col-5,
+        .grid > div.col-6 { display: none; }
+      }
     </style>
   </head>
   <body>
-    <main>
-      <h1>CSV Editor</h1>
-      <p class="tagline">A minimal PDF viewer for Linux, part of <a href="https://github.com/krill-software">krill-software</a>.</p>
-      <div class="links">
-        <a href="https://github.com/krill-software/csv-editor">Source on GitHub</a>
-        <a href="https://github.com/krill-software/csv-editor/releases">Releases</a>
-        <a href="https://github.com/krill-software/csv-editor/blob/main/README.md">README</a>
-      </div>
-      <footer>MIT licensed · No tracking, no accounts</footer>
-    </main>
+    <div class="wrap">
+      <nav class="top">
+        <div class="brand">krill / csv-editor</div>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#principles">Principles</a></li>
+          <li><a href="#install">Install</a></li>
+          <li><a href="https://github.com/krill-software/csv-editor">GitHub</a></li>
+        </ul>
+      </nav>
+
+      <header class="hero">
+        <div class="eyebrow">A CSV editor for Linux</div>
+        <h1>A spreadsheet, <em>without</em> the menus.</h1>
+        <p class="lede">
+          Excel-shaped grid, virtualized rows, RFC-4180-faithful save.
+          No formulas, no pivot tables, no charts — just the cells and
+          the file.
+        </p>
+        <div class="cta">
+          <a
+            class="btn btn-primary"
+            href="https://github.com/krill-software/csv-editor/releases/download/v0.2.1/CSV.Editor_0.2.1_amd64.AppImage"
+          >
+            Download AppImage
+          </a>
+          <a
+            class="btn btn-secondary"
+            href="https://github.com/krill-software/csv-editor/releases/download/v0.2.1/CSV.Editor_0.2.1_amd64.deb"
+          >
+            .deb for Ubuntu / Debian
+          </a>
+        </div>
+        <div class="meta">
+          <strong>v0.2.1</strong> · Linux x86_64 · Free &amp; open source
+        </div>
+
+        <div class="preview-frame">
+          <div class="titlebar">
+            <span class="dot red"></span>
+            <span class="dot amber"></span>
+            <span class="dot green"></span>
+            <span class="title">orders.csv<span class="dirty">•</span></span>
+          </div>
+          <div class="grid">
+            <div class="col-hdr"></div>
+            <div class="col-hdr">A</div>
+            <div class="col-hdr">B</div>
+            <div class="col-hdr">C</div>
+            <div class="col-hdr col-4">D</div>
+            <div class="col-hdr col-5">E</div>
+            <div class="col-hdr col-6">F</div>
+
+            <div class="row-hdr">1</div>
+            <div class="cell">id</div>
+            <div class="cell">customer</div>
+            <div class="cell">amount</div>
+            <div class="cell col-4">currency</div>
+            <div class="cell col-5">placed</div>
+            <div class="cell col-6">status</div>
+
+            <div class="row-hdr">2</div>
+            <div class="cell">1042</div>
+            <div class="cell">A. Holt</div>
+            <div class="cell">19.50</div>
+            <div class="cell col-4">EUR</div>
+            <div class="cell col-5">2026-05-19</div>
+            <div class="cell col-6">paid</div>
+
+            <div class="row-hdr">3</div>
+            <div class="cell">1043</div>
+            <div class="cell">M. Kovács</div>
+            <div class="cell selected">142.00</div>
+            <div class="cell col-4">USD</div>
+            <div class="cell col-5">2026-05-20</div>
+            <div class="cell col-6">paid</div>
+
+            <div class="row-hdr">4</div>
+            <div class="cell">1044</div>
+            <div class="cell">"O'Brien, J."</div>
+            <div class="cell">7.25</div>
+            <div class="cell col-4">GBP</div>
+            <div class="cell col-5">2026-05-21</div>
+            <div class="cell col-6">pending</div>
+
+            <div class="row-hdr">5</div>
+            <div class="cell">1045</div>
+            <div class="cell">L. Tran</div>
+            <div class="cell">88.00</div>
+            <div class="cell col-4">USD</div>
+            <div class="cell col-5">2026-05-22</div>
+            <div class="cell col-6">paid</div>
+          </div>
+          <div class="status-line">
+            <span>CSV · 6 columns · 4 rows</span>
+            <span>C3 · 142.00</span>
+          </div>
+        </div>
+      </header>
+
+      <section id="features">
+        <div class="section-label">Features</div>
+        <h2>Spreadsheet feel, editor scope.</h2>
+        <div class="features">
+          <div class="feature">
+            <div class="tag">Excel-shaped</div>
+            <h3>Sticky header + row numbers</h3>
+            <p>Column letters across the top, row numbers down the side, both pinned. The grid you already know.</p>
+          </div>
+          <div class="feature">
+            <div class="tag">Virtualized</div>
+            <h3>Million-row CSVs without freezing</h3>
+            <p>Only the visible window is in the DOM. Scroll, the window slides, nodes recycle. No janky frame drops.</p>
+          </div>
+          <div class="feature">
+            <div class="tag">RFC-4180</div>
+            <h3>Round-trip faithful</h3>
+            <p>Quoted fields, embedded commas, embedded newlines, double-quote escapes — all preserved on save.</p>
+          </div>
+          <div class="feature">
+            <div class="tag">Blank scratch sheet</div>
+            <h3>Boot into a writable surface</h3>
+            <p>50 × 10 empty cells, no file path. Start typing immediately and Save As to give it a home.</p>
+          </div>
+          <div class="feature">
+            <div class="tag">Per-session undo</div>
+            <h3>Ctrl+Z while editing</h3>
+            <p>In-memory undo stack across cell edits within a session. Save clears it.</p>
+          </div>
+          <div class="feature">
+            <div class="tag">Tauri · Rust · csv crate</div>
+            <h3>Native Linux</h3>
+            <p>Small binary, AppImage and .deb, real .csv file association, in-app updater. No Electron.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="principles">
+        <div class="section-label">Principles</div>
+        <h2>What this isn't.</h2>
+        <div class="principles">
+          <div class="principle">
+            <strong>No formulas.</strong>
+            <span>This isn't a calculator. It's a tabular text editor that happens to look like Excel.</span>
+          </div>
+          <div class="principle">
+            <strong>No multi-sheet workbooks.</strong>
+            <span>A CSV file is one table. If you need tabs, you don't want a CSV editor.</span>
+          </div>
+          <div class="principle">
+            <strong>No charts, pivots, conditional formatting.</strong>
+            <span>If you need analysis, the CSV is your input — open it somewhere else.</span>
+          </div>
+          <div class="principle">
+            <strong>No dialect detect (v1).</strong>
+            <span>Comma only. Semicolon and TSV come in v2 when we add a raw-text mode.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="install">
+        <div class="section-label">Install</div>
+        <h2>Two files. One minute.</h2>
+        <div class="install">
+          <div class="install-copy">
+            <p>
+              Both formats ship the same binary and register
+              <span style="font-family: var(--mono); color: var(--ink)">.csv</span>
+              as an associated file type — opens land in this app by default.
+            </p>
+            <p style="margin-top: 20px">
+              Or build from source:
+              <span style="font-family: var(--mono); color: var(--ink)">pnpm install &amp;&amp; pnpm tauri build</span>.
+            </p>
+          </div>
+          <div class="install-box">
+            <h3>AppImage · any Linux</h3>
+<pre><span class="c"># download</span>
+curl -LO https://github.com/krill-software/csv-editor/releases/download/v0.2.1/CSV.Editor_0.2.1_amd64.AppImage
+
+<span class="c"># make executable &amp; run</span>
+chmod +x CSV.Editor_0.2.1_amd64.AppImage
+./CSV.Editor_0.2.1_amd64.AppImage orders.csv</pre>
+
+            <hr />
+
+            <h3>Debian / Ubuntu</h3>
+<pre>sudo dpkg -i CSV.Editor_0.2.1_amd64.deb
+krill-csv-editor orders.csv</pre>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <div>© krill · MIT licensed · No tracking, no accounts</div>
+        <div>
+          <a href="https://github.com/krill-software/csv-editor">Source on GitHub</a>
+          &nbsp;·&nbsp;
+          <a href="https://github.com/krill-software/csv-editor/issues">Report an issue</a>
+        </div>
+      </footer>
+    </div>
   </body>
 </html>
