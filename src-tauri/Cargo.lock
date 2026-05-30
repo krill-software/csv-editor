@@ -1823,7 +1823,7 @@ dependencies = [
 
 [[package]]
 name = "krill-csv-editor"
-version = "0.2.0"
+version = "0.2.2"
 dependencies = [
  "csv",
  "krill-desktop-core",
