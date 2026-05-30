@@ -1,0 +1,8 @@
+remote_theme: krill-software/docs-theme@v2
+plugins:
+  - jekyll-remote-theme
+
+title: CSV Editor
+slug: csv-editor
+brand: csv-editor
+version: 0.2.2
