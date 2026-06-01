@@ -27,6 +27,10 @@ features:
     title: Native Linux
     blurb: Small binary, AppImage and .deb, real .csv file association, in-app updater. No Electron.
 extension: ".csv"
+mock:
+  filename: orders.csv
+  dirty: true
+  state: 'C3 · 142.00'
 ---
 <style>
   .ce-grid {
@@ -64,10 +68,6 @@ extension: ".csv"
     .ce-grid > div.col-6 { display: none; }
   }
 </style>
-<div class="pv-titlebar">
-  <span class="title">orders.csv<span class="dirty">•</span></span>
-  <span class="winbtns">─ ▢ ✕</span>
-</div>
 <div class="ce-grid">
   <div class="col-hdr"></div>
   <div class="col-hdr">A</div>
@@ -116,8 +116,4 @@ extension: ".csv"
   <div class="cell col-4">USD</div>
   <div class="cell col-5">2026-05-22</div>
   <div class="cell col-6">paid</div>
-</div>
-<div class="pv-status">
-  <span>v0.2.2</span>
-  <span>C3 · 142.00</span>
 </div>
