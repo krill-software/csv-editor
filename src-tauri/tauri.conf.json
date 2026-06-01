@@ -13,10 +13,10 @@
     "windows": [
       {
         "title": "CSV Editor",
-        "width": 1200,
-        "height": 760,
-        "minWidth": 480,
-        "minHeight": 360,
+        "width": 1296,
+        "height": 800,
+        "minWidth": 720,
+        "minHeight": 445,
         "decorations": false,
         "resizable": true,
         "center": true,
@@ -48,7 +48,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["deb", "appimage"],
+    "targets": [
+      "deb",
+      "appimage"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -60,7 +63,9 @@
     "longDescription": "A minimal, single-window CSV editor for Linux. Open, edit, save. Excel-shaped grid, calm chrome, comma-separated.",
     "fileAssociations": [
       {
-        "ext": ["csv"],
+        "ext": [
+          "csv"
+        ],
         "name": "CSV",
         "description": "Comma-separated values",
         "mimeType": "text/csv",
