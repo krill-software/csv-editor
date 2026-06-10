@@ -25,7 +25,7 @@
 
 #grid {
   position: relative;
-  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-family: var(--fm-mono);
   font-size: 12px;
   line-height: 24px;
 }
