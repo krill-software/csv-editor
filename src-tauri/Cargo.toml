@@ -1,6 +1,6 @@
 [package]
 name = "krill-csv-editor"
-version = "0.2.2"
+version = "0.2.3"
 description = "A minimal CSV editor for Linux"
 authors = ["Filip"]
 edition = "2021"
