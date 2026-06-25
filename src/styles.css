@@ -11,15 +11,23 @@
   scrollbar-width: thin;
   scrollbar-color: var(--fm-rule-strong) transparent;
 }
-#viewport::-webkit-scrollbar { width: 10px; height: 10px; }
-#viewport::-webkit-scrollbar-track { background: transparent; }
+#viewport::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+#viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
 #viewport::-webkit-scrollbar-thumb {
   background: var(--fm-rule-strong);
   border-radius: 5px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
-#viewport::-webkit-scrollbar-thumb:hover { background: var(--fm-muted); background-clip: content-box; }
+#viewport::-webkit-scrollbar-thumb:hover {
+  background: var(--fm-muted);
+  background-clip: content-box;
+}
 
 /* Grid =============================================================== */
 
@@ -104,6 +112,13 @@
   z-index: 2;
 }
 
+/* Highlighted (selected-but-not-editing) cell — a lighter accent ring than
+ * the editing state, suppressed while editing so the two don't stack. */
+.cell.data.active:not(.editing) {
+  box-shadow: 0 0 0 1px var(--fm-accent) inset;
+  z-index: 1;
+}
+
 .cell-input {
   width: 100%;
   height: 100%;
@@ -119,4 +134,6 @@
 }
 
 /* Hide the grid + show error placeholder based on body state. */
-body:not([data-state="loaded"]) #grid { display: none; }
+body:not([data-state="loaded"]) #grid {
+  display: none;
+}

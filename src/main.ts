@@ -71,17 +71,16 @@ interface Editing {
 }
 let editing: Editing | null = null;
 
+// The highlighted cell — persists after an edit ends, drives the status
+// line's right half. Spreadsheets always have one cell selected; we open
+// on A1 and follow the cursor from there.
+let active: { row: number; col: number } | null = null;
+
 // ---- Helpers ---------------------------------------------------------
 
 function basename(path: string): string {
   const i = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
   return i >= 0 ? path.slice(i + 1) : path;
-}
-
-function formatBytes(n: number): string {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
-  return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
 function colLabel(i: number): string {
@@ -110,17 +109,31 @@ function refreshChrome() {
   const name = doc.path ? basename(doc.path) : untitledName();
   titleEl.textContent = name;
 
-  const dim = `${doc.rows.length.toLocaleString()} × ${doc.cols.toLocaleString()}`;
-  infoEl.textContent = doc.byteSize > 0
-    ? `CSV · ${formatBytes(doc.byteSize)} · ${dim}`
-    : `CSV · ${dim}`;
-  if (!editing) stateEl.textContent = "—";
+  refreshState();
 
   document.body.dataset.dirty = String(doc.dirty);
 
   const winTitle = `${doc.dirty ? "• " : ""}${name} — CSV Editor`;
   document.title = winTitle;
-  getCurrentWindow().setTitle(winTitle).catch(() => {});
+  getCurrentWindow()
+    .setTitle(winTitle)
+    .catch(() => {});
+}
+
+/** Right half of the status line: highlighted cell │ width × height. */
+function refreshState() {
+  if (!doc) return;
+  const cell = active ? cellAddress(active.row, active.col) : "—";
+  const dims = `${doc.cols.toLocaleString()} × ${doc.rows.length.toLocaleString()}`;
+  stateEl.textContent = `${cell} │ ${dims}`;
+}
+
+/** Move the highlight, repainting the old and new cells if they're mounted. */
+function setActive(row: number, col: number) {
+  if (active) findCellEl(active.row, active.col)?.classList.remove("active");
+  active = { row, col };
+  findCellEl(row, col)?.classList.add("active");
+  refreshState();
 }
 
 // ---- Grid rendering (virtualized) ------------------------------------
@@ -137,8 +150,7 @@ function teardownGrid() {
 function buildHeader() {
   if (!doc) return;
   headerRowEl.replaceChildren();
-  headerRowEl.style.gridTemplateColumns =
-    `${ROW_HEADER_WIDTH}px repeat(${doc.cols}, ${COL_WIDTH}px)`;
+  headerRowEl.style.gridTemplateColumns = `${ROW_HEADER_WIDTH}px repeat(${doc.cols}, ${COL_WIDTH}px)`;
 
   const corner = document.createElement("div");
   corner.className = "cell corner";
@@ -183,8 +195,7 @@ function buildRow(idx: number): HTMLElement {
   const row = document.createElement("div");
   row.className = "grid-row";
   row.style.top = `${idx * ROW_HEIGHT}px`;
-  row.style.gridTemplateColumns =
-    `${ROW_HEADER_WIDTH}px repeat(${doc.cols}, ${COL_WIDTH}px)`;
+  row.style.gridTemplateColumns = `${ROW_HEADER_WIDTH}px repeat(${doc.cols}, ${COL_WIDTH}px)`;
 
   const rh = document.createElement("div");
   rh.className = "cell row-header";
@@ -195,6 +206,9 @@ function buildRow(idx: number): HTMLElement {
   for (let c = 0; c < doc.cols; c++) {
     const cell = document.createElement("div");
     cell.className = "cell data";
+    if (active && active.row === idx && active.col === c) {
+      cell.classList.add("active");
+    }
     cell.dataset.row = String(idx);
     cell.dataset.col = String(c);
     cell.textContent = cells[c] ?? "";
@@ -210,6 +224,7 @@ function buildRow(idx: number): HTMLElement {
 
 function mountGrid() {
   if (!doc) return;
+  active = { row: 0, col: 0 };
   buildHeader();
   contentEl.style.height = `${doc.rows.length * ROW_HEIGHT}px`;
   visibleRows.clear();
@@ -219,9 +234,7 @@ function mountGrid() {
 }
 
 function findCellEl(row: number, col: number): HTMLElement | null {
-  return document.querySelector<HTMLElement>(
-    `.cell.data[data-row="${row}"][data-col="${col}"]`,
-  );
+  return document.querySelector<HTMLElement>(`.cell.data[data-row="${row}"][data-col="${col}"]`);
 }
 
 // ---- Cell editing ----------------------------------------------------
@@ -245,7 +258,7 @@ function startEdit(row: number, col: number) {
   input.select();
 
   editing = { row, col, input, cellEl, originalText: value };
-  stateEl.textContent = cellAddress(row, col);
+  setActive(row, col);
 
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
@@ -299,8 +312,8 @@ function commitEdit(): { changed: boolean } | null {
     doc.dirty = true;
     refreshChrome();
   }
-  // If unchanged we don't need refreshChrome (dirty state didn't change).
-  stateEl.textContent = "—";
+  // Rows may have grown above; keep the dimensions readout in sync.
+  refreshState();
   // Suppress unused-var: originalText is kept for symmetry with cancelEdit
   void originalText;
 
@@ -314,7 +327,6 @@ function cancelEdit() {
   cellEl.textContent = originalText;
   cellEl.classList.remove("editing");
   editing = null;
-  stateEl.textContent = "—";
 }
 
 // ---- Doc lifecycle ---------------------------------------------------
@@ -406,11 +418,11 @@ function initChrome() {
   const chrome = mountChrome({
     productName: "CSV Editor",
     actions: {
-      "new":        setBlankDoc,
-      "open":       openViaDialog,
-      "save":       save,
-      "save-as":    saveAs,
-      "fullscreen": toggleFullscreen,
+      new: setBlankDoc,
+      open: openViaDialog,
+      save: save,
+      "save-as": saveAs,
+      fullscreen: toggleFullscreen,
     },
     showStatusLine: true,
     updater: true,
@@ -419,6 +431,8 @@ function initChrome() {
   viewportEl = chrome.viewport;
   infoEl = chrome.statusInfo!;
   stateEl = chrome.statusState!;
+  // Left half is the static app version (vX.Y.Z), set once at boot.
+  infoEl.textContent = `v${__APP_VERSION__}`;
 
   gridEl = document.createElement("div");
   gridEl.id = "grid";
@@ -443,13 +457,17 @@ function initChrome() {
   viewportEl.appendChild(errorState.element);
 
   let scrollRaf = 0;
-  viewportEl.addEventListener("scroll", () => {
-    if (scrollRaf) return;
-    scrollRaf = requestAnimationFrame(() => {
-      scrollRaf = 0;
-      renderVisibleRows();
-    });
-  }, { passive: true });
+  viewportEl.addEventListener(
+    "scroll",
+    () => {
+      if (scrollRaf) return;
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = 0;
+        renderVisibleRows();
+      });
+    },
+    { passive: true },
+  );
 
   document.body.dataset.state = "loaded";
 }
@@ -462,12 +480,16 @@ async function toggleFullscreen(): Promise<void> {
 }
 
 function installFullscreenEscape() {
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && document.body.dataset.fullscreen === "true") {
-      e.preventDefault();
-      void toggleFullscreen();
-    }
-  }, { capture: true });
+  window.addEventListener(
+    "keydown",
+    (e) => {
+      if (e.key === "Escape" && document.body.dataset.fullscreen === "true") {
+        e.preventDefault();
+        void toggleFullscreen();
+      }
+    },
+    { capture: true },
+  );
 }
 
 async function installFileDrop() {
@@ -502,13 +524,20 @@ async function boot() {
       await openPath(arg);
       opened = true;
     }
-  } catch { /* cli plugin unavailable */ }
+  } catch {
+    /* cli plugin unavailable */
+  }
 
   if (!opened && import.meta.env.DEV) {
     try {
       const dev = await invoke<string | null>("dev_test_file");
-      if (dev) { await openPath(dev); opened = true; }
-    } catch { /* no test file */ }
+      if (dev) {
+        await openPath(dev);
+        opened = true;
+      }
+    } catch {
+      /* no test file */
+    }
   }
 
   if (!opened) setBlankDoc();
