@@ -46,7 +46,7 @@ Convention lives in [STYLE.md](https://github.com/krill-software/.github/blob/ma
 
 ## Stack
 
-- **Shell:** Tauri 2. Mirrors document-viewer.
+- **Shell:** Tauri 2. Mirrors pdf-reader.
 - **Frontend:** TypeScript + Vite. No framework.
 - **Chrome + palette:** [`@krill-software/desktop-ui`](https://github.com/krill-software/desktop-ui).
 - **Rust state + fs:** [`krill-desktop-core`](https://github.com/krill-software/desktop-core).
@@ -121,7 +121,7 @@ Convention lives in [STYLE.md](https://github.com/krill-software/.github/blob/ma
 - All rows are tracked in JS; only the visible window (plus ~10 rows of overscan above + below) is in the DOM.
 - Each row's vertical position is `row-index × 24px`, set via `transform` on the row element.
 - The grid container has a tall placeholder div whose height = `totalRows × 24px` so the browser scrollbar sizes correctly.
-- On scroll: compute the visible row range, recycle DOM nodes to new row indices. Same pattern as document-viewer's lazy page rendering.
+- On scroll: compute the visible row range, recycle DOM nodes to new row indices. Same pattern as pdf-reader's lazy page rendering.
 
 ### Status line
 - **LEFT (info)**: `CSV · {size} · {rows} × {cols}` (e.g. "CSV · 2.4 MB · 12,043 × 8").
