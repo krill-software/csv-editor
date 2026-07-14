@@ -2,7 +2,7 @@
 
 A minimal, single-window Linux CSV editor. Open a comma-separated file, see it as an Excel-shaped grid, edit cells in place, save. **The product is the calm** — the bar is "spreadsheet feel without the menu sprawl of LibreOffice Calc."
 
-v1 reads + writes comma-separated files. v2 adds a raw text mode + dialect auto-detect.
+v1 reads + writes delimited files with auto-detected separators (comma, semicolon, tab, pipe). v2 adds a raw text mode.
 
 ## Naming (this app)
 
@@ -34,7 +34,7 @@ Convention lives in [STYLE.md](https://github.com/krill-software/.github/blob/ma
 - **No formulas.** This isn't a calculator — just a tabular text editor.
 - **No multi-sheet workbooks.** A CSV file is one table.
 - **No charts, no pivot tables, no conditional formatting.**
-- **No dialect auto-detect.** Comma only in v1. `;`-separated and tab-separated come in v2.
+- **No manual dialect override.** The separator (`,`, `;`, tab, `|`) is auto-detected on open and round-tripped on save; there's no UI to force a different one.
 - **No raw / text view mode.** Single Excel-shaped grid in v1. Raw mode in v2.
 - **No add / remove / reorder columns or rows from a UI.** v1 edits cell contents only. (Edits via raw mode arrive in v2.)
 - **No sort, no filter.** Same — v2.
@@ -164,7 +164,7 @@ Convention lives in [STYLE.md](https://github.com/krill-software/.github/blob/ma
 
 ## File handling
 
-- **Format in/out (v1)**: comma-separated only. RFC-4180-conformant quoting via the `csv` crate.
+- **Format in/out**: delimiter auto-detected on open — comma, semicolon, tab, or pipe — and preserved on save (a `;`-file stays a `;`-file). RFC-4180-conformant quoting via the `csv` crate. New / blank sheets save as comma. Detection samples the first 64 KB and picks the delimiter that yields the most consistent multi-column shape, so a leading metadata / header line (e.g. a `VER …` row with a different field count) doesn't derail it.
 - **Encoding**: UTF-8 in, UTF-8 out. Files with BOM are tolerated on read; the BOM is preserved on save.
 - **Line endings**: LF on save. Read tolerates CRLF and CR.
 - **External changes**: not watched.
@@ -182,7 +182,6 @@ Convention lives in [STYLE.md](https://github.com/krill-software/.github/blob/ma
 ## v2 — sketched, not committed
 
 - **Raw text mode**: toggle between grid and a CodeMirror-style text view, like markdown-editor's preview toggle. Same `Ctrl+E` shortcut.
-- **Dialect auto-detect**: sniff the separator (`,`, `;`, `\t`) from the first 64 KB of the file.
 - **Add / remove rows + columns** from the UI (right-click row/column header).
 - **Multi-cell selection + copy / paste** (Excel-compatible TSV on the clipboard).
 - **Sort + filter** column-by-column.

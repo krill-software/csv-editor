@@ -1,14 +1,14 @@
 # CSV Editor
 
-A minimal, single-window CSV editor for Linux. Open a comma-separated file, edit cells in an Excel-shaped grid, save.
+A minimal, single-window CSV editor for Linux. Open a delimited file, edit cells in an Excel-shaped grid, save.
 
-Built on Tauri 2 (Rust + system webview) with a TypeScript frontend. CSV parsing via Rust's [`csv` crate](https://crates.io/crates/csv) (RFC-4180 quoted fields, embedded commas + newlines, escapes). See [SPEC.md](SPEC.md) for the design rationale.
+Built on Tauri 2 (Rust + system webview) with a TypeScript frontend. CSV parsing via Rust's [`csv` crate](https://crates.io/crates/csv) (RFC-4180 quoted fields, embedded delimiters + newlines, escapes). The separator — comma, semicolon, tab, or pipe — is auto-detected on open and preserved on save. See [SPEC.md](SPEC.md) for the design rationale.
 
-v1 reads + writes comma-separated files. v2 adds a raw text mode and dialect auto-detect.
+v1 reads + writes delimited files with auto-detected separators. v2 adds a raw text mode.
 
 ## Features
 
-- **Open** — drag-drop, CLI arg, `Ctrl+O`. Format (v1): comma-separated `.csv`.
+- **Open** — drag-drop, CLI arg, `Ctrl+O`. Separator (comma / semicolon / tab / pipe) is auto-detected, so `.csv`, `.tsv`, `.txt`, and other delimited files all just open.
 - **Virtualized grid** — handles large files; only visible rows are in the DOM.
 - **Sticky header row + row-number column** — Excel-shaped.
 - **Fullscreen** — `F` or `F11`, `Esc` to exit.
