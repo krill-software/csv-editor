@@ -18,6 +18,10 @@ interface CsvRead {
   path: string;
   rows: string[][];
   byte_size: number;
+  /** Delimiter the file was parsed with, as a one-char string (auto-detected
+   *  in Rust). Round-tripped on save so a `;`- or tab-separated file stays in
+   *  its original dialect. */
+  delimiter: string;
 }
 
 // ---- Doc state -------------------------------------------------------
@@ -29,6 +33,9 @@ interface DocState {
   cols: number;
   byteSize: number;
   dirty: boolean;
+  /** Delimiter to write with — the one the file was opened with, or "," for a
+   *  fresh scratch sheet. Keeps saves in the file's original dialect. */
+  delimiter: string;
 }
 let doc: DocState | null = null;
 
@@ -40,7 +47,7 @@ function blankDoc(): DocState {
   const ROWS = 50;
   const COLS = 10;
   const rows = Array.from({ length: ROWS }, () => Array(COLS).fill(""));
-  return { path: null, rows, cols: COLS, byteSize: 0, dirty: false };
+  return { path: null, rows, cols: COLS, byteSize: 0, dirty: false, delimiter: "," };
 }
 
 // ---- DOM refs (assigned in initChrome) -------------------------------
@@ -358,6 +365,7 @@ async function openPath(path: string): Promise<void> {
     cols,
     byteSize: res.byte_size,
     dirty: false,
+    delimiter: res.delimiter || ",",
   };
   document.body.dataset.state = "loaded";
   errorState.element.hidden = true;
@@ -369,7 +377,13 @@ async function openViaDialog(): Promise<void> {
   const selected = await openDialog({
     multiple: false,
     directory: false,
-    filters: [{ name: "CSV", extensions: ["csv"] }],
+    // The delimiter is auto-detected on read, so the picker isn't limited to
+    // `.csv` — semicolon / tab files often carry other extensions (.tsv, .txt,
+    // .kmm2, …). "All files" lets any delimited text through.
+    filters: [
+      { name: "Delimited text", extensions: ["csv", "tsv", "tab", "txt"] },
+      { name: "All files", extensions: ["*"] },
+    ],
   });
   if (typeof selected === "string") await openPath(selected);
 }
@@ -382,6 +396,7 @@ async function save(): Promise<void> {
     const written = await invoke<string>("write_csv", {
       path: doc.path,
       rows: doc.rows,
+      delimiter: doc.delimiter,
     });
     doc.path = written;
     doc.dirty = false;
@@ -403,6 +418,7 @@ async function saveAs(): Promise<void> {
     const written = await invoke<string>("write_csv", {
       path: target,
       rows: doc.rows,
+      delimiter: doc.delimiter,
     });
     doc.path = written;
     doc.dirty = false;
