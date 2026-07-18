@@ -5,6 +5,7 @@ import {
   mountChrome,
   buildErrorState,
   showBootError,
+  buildTextSearch,
   type ErrorStateRefs,
 } from "@krill-software/desktop-ui";
 
@@ -82,6 +83,54 @@ let editing: Editing | null = null;
 // line's right half. Spreadsheets always have one cell selected; we open
 // on A1 and follow the cursor from there.
 let active: { row: number; col: number } | null = null;
+
+// Search state
+let searchQuery = "";
+const searchMatches = new Set<string>();
+
+function cellKey(row: number, col: number): string {
+  return `${row},${col}`;
+}
+
+function updateSearchHighlights() {
+  searchMatches.clear();
+  if (!doc || !searchQuery) {
+    visibleRows.forEach((row) => {
+      row.querySelectorAll(".cell.match").forEach((el) => el.classList.remove("match"));
+    });
+    return;
+  }
+
+  const query = searchQuery.toLowerCase();
+  for (let r = 0; r < doc.rows.length; r++) {
+    for (let c = 0; c < doc.cols; c++) {
+      const cell = doc.rows[r]?.[c] ?? "";
+      if (cell.toLowerCase().includes(query)) {
+        searchMatches.add(cellKey(r, c));
+      }
+    }
+  }
+
+  visibleRows.forEach((row) => {
+    row.querySelectorAll(".cell.data").forEach((el) => {
+      const r = el.getAttribute("data-row");
+      const c = el.getAttribute("data-col");
+      if (r !== null && c !== null && searchMatches.has(cellKey(Number(r), Number(c)))) {
+        el.classList.add("match");
+      } else {
+        el.classList.remove("match");
+      }
+    });
+  });
+
+  if (searchMatches.size > 0) {
+    const firstMatch = Array.from(searchMatches)[0].split(",").map(Number);
+    const firstMatchEl = findCellEl(firstMatch[0], firstMatch[1]);
+    if (firstMatchEl) {
+      firstMatchEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+}
 
 // ---- Helpers ---------------------------------------------------------
 
@@ -193,6 +242,17 @@ function renderVisibleRows() {
       const row = buildRow(i);
       contentEl.appendChild(row);
       visibleRows.set(i, row);
+
+      // Apply search highlights to newly rendered row
+      if (searchQuery) {
+        row.querySelectorAll(".cell.data").forEach((el) => {
+          const r = el.getAttribute("data-row");
+          const c = el.getAttribute("data-col");
+          if (r !== null && c !== null && searchMatches.has(cellKey(Number(r), Number(c)))) {
+            el.classList.add("match");
+          }
+        });
+      }
     }
   }
 }
@@ -486,6 +546,27 @@ function initChrome() {
   );
 
   document.body.dataset.state = "loaded";
+
+  // Setup text search box.
+  const search = buildTextSearch({
+    onChange: (value: string) => {
+      searchQuery = value;
+      updateSearchHighlights();
+    },
+    onClose: () => {
+      gridEl.focus();
+    },
+  });
+  search.element.style.position = "absolute";
+  gridEl.appendChild(search.element);
+
+  // Ctrl+F to toggle search.
+  document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+      e.preventDefault();
+      search.open();
+    }
+  });
 }
 
 async function toggleFullscreen(): Promise<void> {

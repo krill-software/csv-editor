@@ -133,6 +133,12 @@
   line-height: 24px;
 }
 
+/* Search match highlighting */
+.cell.data.match {
+  background-color: rgba(221, 117, 150, 0.3);
+  outline: 1px solid var(--fm-accent);
+}
+
 /* Hide the grid + show error placeholder based on body state. */
 body:not([data-state="loaded"]) #grid {
   display: none;
