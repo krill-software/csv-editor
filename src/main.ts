@@ -37,6 +37,9 @@ interface DocState {
   /** Delimiter to write with — the one the file was opened with, or "," for a
    *  fresh scratch sheet. Keeps saves in the file's original dialect. */
   delimiter: string;
+  /** Per-column pixel widths, session-only (not persisted). Starts at
+   *  COL_WIDTH for every column; the header's drag handle changes it. */
+  colWidths: number[];
 }
 let doc: DocState | null = null;
 
@@ -48,7 +51,15 @@ function blankDoc(): DocState {
   const ROWS = 50;
   const COLS = 10;
   const rows = Array.from({ length: ROWS }, () => Array(COLS).fill(""));
-  return { path: null, rows, cols: COLS, byteSize: 0, dirty: false, delimiter: "," };
+  return {
+    path: null,
+    rows,
+    cols: COLS,
+    byteSize: 0,
+    dirty: false,
+    delimiter: ",",
+    colWidths: Array(COLS).fill(COL_WIDTH),
+  };
 }
 
 // ---- DOM refs (assigned in initChrome) -------------------------------
@@ -65,6 +76,8 @@ let errorState: ErrorStateRefs;
 // Visible-row windowing.
 const ROW_HEIGHT = 24;
 const COL_WIDTH = 120;
+const MIN_COL_WIDTH = 32;
+const CELL_PADDING = 8; // must match .cell padding in styles.css
 const ROW_HEADER_WIDTH = 56;
 const OVERSCAN = 10;
 const visibleRows = new Map<number, HTMLElement>();
@@ -203,10 +216,49 @@ function teardownGrid() {
   }
 }
 
+/** `grid-template-columns` for the header and every row: the row-number
+ *  gutter followed by one track per column at its current width. */
+function gridTemplate(): string {
+  if (!doc) return "";
+  return `${ROW_HEADER_WIDTH}px ${doc.colWidths.map((w) => `${w}px`).join(" ")}`;
+}
+
+/** Push the current column widths to the header and all mounted rows. */
+function applyColWidths() {
+  const tpl = gridTemplate();
+  headerRowEl.style.gridTemplateColumns = tpl;
+  visibleRows.forEach((row) => {
+    row.style.gridTemplateColumns = tpl;
+  });
+}
+
+function setColWidth(col: number, width: number) {
+  if (!doc) return;
+  doc.colWidths[col] = Math.max(MIN_COL_WIDTH, Math.round(width));
+  applyColWidths();
+}
+
+/** Width that fits the column's widest value (or its letter label) exactly.
+ *  The grid is monospace, so the longest string by character count is the
+ *  widest one; measure just that one instead of every cell. */
+function fitColWidth(col: number): number {
+  if (!doc) return COL_WIDTH;
+  let longest = colLabel(col);
+  for (const row of doc.rows) {
+    const v = row[col];
+    if (v && v.length > longest.length) longest = v;
+  }
+  const ctx = document.createElement("canvas").getContext("2d");
+  if (!ctx) return COL_WIDTH;
+  ctx.font = getComputedStyle(gridEl).font;
+  // +1 for the cell's right border.
+  return Math.ceil(ctx.measureText(longest).width) + CELL_PADDING * 2 + 1;
+}
+
 function buildHeader() {
   if (!doc) return;
   headerRowEl.replaceChildren();
-  headerRowEl.style.gridTemplateColumns = `${ROW_HEADER_WIDTH}px repeat(${doc.cols}, ${COL_WIDTH}px)`;
+  headerRowEl.style.gridTemplateColumns = gridTemplate();
 
   const corner = document.createElement("div");
   corner.className = "cell corner";
@@ -216,8 +268,58 @@ function buildHeader() {
     const cell = document.createElement("div");
     cell.className = "cell col-header";
     cell.textContent = colLabel(c);
+    cell.appendChild(buildColResizeHandle(c));
     headerRowEl.appendChild(cell);
   }
+}
+
+/** Drag handle on a column header's right edge: drag to resize, double-click
+ *  to snap the column to its content width. */
+function buildColResizeHandle(col: number): HTMLElement {
+  const handle = document.createElement("div");
+  handle.className = "col-resize";
+  let dragged = false;
+
+  handle.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || !doc) return;
+    e.preventDefault();
+    if (editing) commitEdit();
+    const startX = e.clientX;
+    const startW = doc.colWidths[col];
+    dragged = false;
+    handle.setPointerCapture(e.pointerId);
+    handle.classList.add("dragging");
+    document.body.dataset.resizing = "true";
+
+    const onMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - startX;
+      if (Math.abs(dx) > 2) dragged = true;
+      setColWidth(col, startW + dx);
+    };
+    const onUp = () => {
+      handle.removeEventListener("pointermove", onMove);
+      handle.removeEventListener("pointerup", onUp);
+      handle.removeEventListener("pointercancel", onUp);
+      handle.classList.remove("dragging");
+      delete document.body.dataset.resizing;
+    };
+    handle.addEventListener("pointermove", onMove);
+    handle.addEventListener("pointerup", onUp);
+    handle.addEventListener("pointercancel", onUp);
+  });
+
+  handle.addEventListener("dblclick", (e) => {
+    e.preventDefault();
+    // A drag ends with a click; don't let a quick second click after a
+    // drag be read as "fit to content".
+    if (dragged) {
+      dragged = false;
+      return;
+    }
+    setColWidth(col, fitColWidth(col));
+  });
+
+  return handle;
 }
 
 function renderVisibleRows() {
@@ -262,7 +364,7 @@ function buildRow(idx: number): HTMLElement {
   const row = document.createElement("div");
   row.className = "grid-row";
   row.style.top = `${idx * ROW_HEIGHT}px`;
-  row.style.gridTemplateColumns = `${ROW_HEADER_WIDTH}px repeat(${doc.cols}, ${COL_WIDTH}px)`;
+  row.style.gridTemplateColumns = gridTemplate();
 
   const rh = document.createElement("div");
   rh.className = "cell row-header";
@@ -370,10 +472,12 @@ function commitEdit(): { changed: boolean } | null {
   const changed = doc.rows[row][col] !== newValue;
   doc.rows[row][col] = newValue;
 
+  // Clear `editing` before touching the DOM: removing the input fires its
+  // blur handler, which would otherwise re-enter commitEdit mid-removal.
+  editing = null;
   cellEl.replaceChildren();
   cellEl.textContent = newValue;
   cellEl.classList.remove("editing");
-  editing = null;
 
   if (changed && !doc.dirty) {
     doc.dirty = true;
@@ -390,10 +494,10 @@ function commitEdit(): { changed: boolean } | null {
 function cancelEdit() {
   if (!editing) return;
   const { cellEl, originalText } = editing;
+  editing = null; // see commitEdit
   cellEl.replaceChildren();
   cellEl.textContent = originalText;
   cellEl.classList.remove("editing");
-  editing = null;
 }
 
 // ---- Doc lifecycle ---------------------------------------------------
@@ -426,6 +530,7 @@ async function openPath(path: string): Promise<void> {
     byteSize: res.byte_size,
     dirty: false,
     delimiter: res.delimiter || ",",
+    colWidths: Array(cols).fill(COL_WIDTH),
   };
   document.body.dataset.state = "loaded";
   errorState.element.hidden = true;

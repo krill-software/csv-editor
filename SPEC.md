@@ -96,7 +96,7 @@ Convention lives in [STYLE.md](https://github.com/krill-software/.github/blob/ma
 ### Grid view (the "main view")
 - **Sticky header row** — A, B, C, … AA, AB, … (Excel-style column letters).
 - **Sticky row-number column** — 1, 2, 3, … on the left.
-- **Default column width**: 120 px. (Per-column resize comes later.)
+- **Column width**: 120 px by default. Drag the right edge of a column letter to resize; double-click it to snap the column to its widest cell. Widths are per-session, not persisted.
 - **Default row height**: 24 px (matches the krill chrome scale).
 - **Selection**: clicked cell gets the `--fm-accent` border. Single cell only in v1.
 - **Cursor visible** — always know which cell is "active."
@@ -185,7 +185,7 @@ Convention lives in [STYLE.md](https://github.com/krill-software/.github/blob/ma
 - **Add / remove rows + columns** from the UI (right-click row/column header).
 - **Multi-cell selection + copy / paste** (Excel-compatible TSV on the clipboard).
 - **Sort + filter** column-by-column.
-- **Per-column widths** persisted per-file (in state).
+- **Per-column widths persisted** per-file (in state) — resizing itself shipped in v1.
 
 The v1 SPEC stays clean; v2 will get its own SPEC supplement when we get there.
 

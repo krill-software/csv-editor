@@ -84,6 +84,30 @@
   padding: 0;
 }
 
+/* Column header hosts the resize handle on its right edge. */
+.cell.col-header {
+  position: relative;
+}
+.col-resize {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 7px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 1;
+}
+/* Accent rule on the edge while hovering or dragging. */
+.col-resize:hover,
+.col-resize.dragging {
+  box-shadow: inset -2px 0 0 var(--fm-accent);
+}
+/* Keep the col-resize cursor while dragging, wherever the pointer roams. */
+body[data-resizing="true"] * {
+  cursor: col-resize !important;
+  user-select: none;
+}
+
 /* Row-number gutter — sticky to the left edge so it stays visible when
  * scrolling horizontally. */
 .cell.row-header {
