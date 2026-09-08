@@ -3,8 +3,6 @@ layout: app
 tagline: a minimal CSV editor for Linux
 description: A minimal CSV editor for Linux. Excel-shaped grid, virtualized rows, RFC-4180 parsing. No formulas, no menu sprawl.
 og_description: Open a CSV. Edit cells. Save. Nothing else.
-eyebrow: A CSV editor for Linux
-heading: "A spreadsheet, <em>without</em> the menus."
 lede: Excel-shaped grid, virtualized rows, RFC-4180-faithful save. No formulas, no pivot tables, no charts — just the cells and the file.
 features_heading: Spreadsheet feel, editor scope.
 features:
@@ -51,7 +49,7 @@ mock:
   }
   .ce-grid .col-hdr,
   .ce-grid .row-hdr {
-    background: rgba(48, 52, 63, 0.04);
+    background: rgba(var(--ink-rgb), 0.04);
     color: var(--muted);
     font-size: 12px;
     text-align: center;
